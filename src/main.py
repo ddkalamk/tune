@@ -39,6 +39,7 @@ cs.store(group="backend", name="torchscript_backend", node=PyTorchConfig)
 cs.store(group="backend", name="tensorflow_backend", node=TensorflowConfig)
 cs.store(group="backend", name="xla_backend", node=TensorflowConfig)
 cs.store(group="backend", name="ort_backend", node=OnnxRuntimeConfig)
+cs.store(group="backend", name="pcl_backend", node=PyTorchConfig)
 
 
 LOGGER = getLogger("benchmark")

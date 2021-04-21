@@ -1,0 +1,7 @@
+_target_: backends.pytorch.PclBackend
+name: pcl
+version: ${pytorch_version:}
+use_torchscript: false
+use_pcl: true
+num_threads: null
+num_interops_threads: null

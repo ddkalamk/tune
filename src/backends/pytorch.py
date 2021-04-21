@@ -25,6 +25,12 @@ from benchmark import Benchmark
 from config import BenchmarkConfig
 from utils import SEC_TO_NS_SCALE
 
+try:
+    import pcl_bert
+    print("PCL_BERT is available")
+except ImportError:
+    pcl_bert = None
+    print("PCL_BERT not found")
 
 BACKEND_NAME = "pytorch"
 LOGGER = getLogger(BACKEND_NAME)
@@ -45,7 +51,14 @@ class PyTorchBackend(Backend[PyTorchConfig]):
 
     def __init__(self, model: str):
         super().__init__(model)
-        self.model = AutoModel.from_pretrained(model)
+        use_pcl = self.use_pcl if hasattr(self, 'use_pcl') else False
+        if use_pcl:
+            assert pcl_bert is not None, "pcl backend requested but pcl_bert module not found"
+            with pcl_bert.pcl_impl(use_pcl):
+                self.model = AutoModel.from_pretrained(model)
+        else:
+            self.model = AutoModel.from_pretrained(model)
+        self.use_pcl = use_pcl
 
         LOGGER.info(f"Allocated PyTorch Backend for model: {model}")
 
@@ -98,7 +111,10 @@ class PyTorchBackend(Backend[PyTorchConfig]):
         """
         :return:
         """
-        LOGGER.info("Running PyTorch Eager benchmark")
+        if self.use_pcl:
+            LOGGER.info("Running PyTorch PCL benchmark")
+        else:
+            LOGGER.info("Running PyTorch Eager benchmark")
         benchmark = Benchmark()
 
         dummy_inputs = self._get_dummy_inputs(
@@ -171,4 +187,11 @@ class PyTorchBackend(Backend[PyTorchConfig]):
 
             benchmark.finalize(benchmark_duration_ns)
         return benchmark
+
+class PclBackend(PyTorchBackend):
+    NAME = BACKEND_NAME
+
+    def __init__(self, model: str):
+        self.use_pcl = True
+        super().__init__(model)
 
